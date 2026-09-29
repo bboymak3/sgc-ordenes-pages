@@ -40,27 +40,27 @@ export async function getColumnas(env, tabla) {
 export async function asegurarColumnasFaltantes(env) {
   try {
     // Tablas que pueden no existir
-    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS CostosAdicionales (
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS sgc_ord_CostosAdicionales (
       id INTEGER PRIMARY KEY AUTOINCREMENT, orden_id INTEGER NOT NULL,
       concepto TEXT NOT NULL, monto REAL NOT NULL,
       fecha_registro DATETIME DEFAULT CURRENT_TIMESTAMP,
       registrado_por TEXT, categoria TEXT NOT NULL DEFAULT 'Mano de Obra'
     )`).run();
 
-    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS GastosNegocio (
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS sgc_ord_GastosNegocio (
       id INTEGER PRIMARY KEY AUTOINCREMENT, concepto TEXT NOT NULL,
       categoria TEXT NOT NULL DEFAULT 'Otros', monto REAL NOT NULL,
       fecha_gasto DATE NOT NULL, observaciones TEXT,
       registrado_por TEXT, fecha_registro DATETIME DEFAULT CURRENT_TIMESTAMP
     )`).run();
 
-    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS Pagos (
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS sgc_ord_Pagos (
       id INTEGER PRIMARY KEY AUTOINCREMENT, orden_id INTEGER NOT NULL,
       monto REAL NOT NULL, metodo_pago TEXT NOT NULL,
       fecha_pago DATETIME DEFAULT CURRENT_TIMESTAMP, observaciones TEXT
     )`).run();
 
-    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS ServiciosCatalogo (
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS sgc_ord_ServiciosCatalogo (
       id INTEGER PRIMARY KEY AUTOINCREMENT, nombre TEXT NOT NULL UNIQUE,
       precio_sugerido REAL NOT NULL DEFAULT 0,
       categoria TEXT NOT NULL DEFAULT 'Mantenimiento',
@@ -68,12 +68,12 @@ export async function asegurarColumnasFaltantes(env) {
       activo INTEGER DEFAULT 1, fecha_registro DATETIME DEFAULT CURRENT_TIMESTAMP
     )`).run();
 
-    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS ModelosVehiculo (
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS sgc_ord_ModelosVehiculo (
       id INTEGER PRIMARY KEY AUTOINCREMENT, nombre TEXT NOT NULL UNIQUE,
       fecha_registro DATETIME DEFAULT CURRENT_TIMESTAMP
     )`).run();
 
-    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS NotificacionesWhatsApp (
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS sgc_ord_NotificacionesWhatsApp (
       id INTEGER PRIMARY KEY AUTOINCREMENT, orden_id INTEGER NOT NULL,
       telefono TEXT NOT NULL, mensaje TEXT NOT NULL,
       tipo_evento TEXT NOT NULL, enviada INTEGER DEFAULT 0,
@@ -81,7 +81,7 @@ export async function asegurarColumnasFaltantes(env) {
     )`).run();
 
     // Tabla AgendaTecnicos para Calendario de Agendamiento
-    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS AgendaTecnicos (
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS sgc_ord_AgendaTecnicos (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       tecnico_id INTEGER NOT NULL,
       orden_id INTEGER,
@@ -94,12 +94,12 @@ export async function asegurarColumnasFaltantes(env) {
       estado TEXT DEFAULT 'pendiente',
       creado_por TEXT DEFAULT 'admin',
       fecha_creacion TEXT DEFAULT (datetime('now', '-3 hours')),
-      FOREIGN KEY (tecnico_id) REFERENCES Tecnicos(id),
-      FOREIGN KEY (orden_id) REFERENCES OrdenesTrabajo(id)
+      FOREIGN KEY (tecnico_id) REFERENCES sgc_ord_Tecnicos(id),
+      FOREIGN KEY (orden_id) REFERENCES sgc_ord_OrdenesTrabajo(id)
     )`).run();
 
     // Tabla FotosTrabajo para fotos subidas por técnicos (almacenadas en R2)
-    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS FotosTrabajo (
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS sgc_ord_FotosTrabajo (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       orden_id INTEGER NOT NULL,
       tecnico_id INTEGER NOT NULL,
@@ -109,8 +109,8 @@ export async function asegurarColumnasFaltantes(env) {
       tamano_bytes INTEGER DEFAULT 0,
       descripcion TEXT,
       fecha_subida TEXT DEFAULT (datetime('now', '-3 hours')),
-      FOREIGN KEY (orden_id) REFERENCES OrdenesTrabajo(id),
-      FOREIGN KEY (tecnico_id) REFERENCES Tecnicos(id)
+      FOREIGN KEY (orden_id) REFERENCES sgc_ord_OrdenesTrabajo(id),
+      FOREIGN KEY (tecnico_id) REFERENCES sgc_ord_Tecnicos(id)
     )`).run();
 
     // Agregar columnas nuevas a FotosTrabajo si la tabla ya existía sin ellas
@@ -125,14 +125,14 @@ export async function asegurarColumnasFaltantes(env) {
     }
 
     // Tabla NotasTrabajo para notas de técnicos
-    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS NotasTrabajo (
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS sgc_ord_NotasTrabajo (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       orden_id INTEGER NOT NULL,
       tecnico_id INTEGER NOT NULL,
       nota TEXT NOT NULL,
       fecha_nota TEXT DEFAULT (datetime('now', '-3 hours')),
-      FOREIGN KEY (orden_id) REFERENCES OrdenesTrabajo(id),
-      FOREIGN KEY (tecnico_id) REFERENCES Tecnicos(id)
+      FOREIGN KEY (orden_id) REFERENCES sgc_ord_OrdenesTrabajo(id),
+      FOREIGN KEY (tecnico_id) REFERENCES sgc_ord_Tecnicos(id)
     )`).run();
 
     // Columnas faltantes en OrdenesTrabajo
@@ -164,7 +164,7 @@ export async function asegurarColumnasFaltantes(env) {
     try { await env.DB.prepare(`ALTER TABLE sgc_ord_Tecnicos ADD COLUMN apellido TEXT DEFAULT ''`).run(); } catch (e) {}
 
     // Tabla LiquidacionOrden: liquidación de órdenes con % personalizado por técnico
-    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS LiquidacionOrden (
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS sgc_ord_LiquidacionOrden (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       orden_id INTEGER NOT NULL,
       tecnico_id INTEGER NOT NULL,
@@ -175,8 +175,8 @@ export async function asegurarColumnasFaltantes(env) {
       observaciones TEXT,
       fecha_liquidacion TEXT DEFAULT (datetime('now', '-3 hours')),
       estado TEXT DEFAULT 'pendiente',
-      FOREIGN KEY (orden_id) REFERENCES OrdenesTrabajo(id),
-      FOREIGN KEY (tecnico_id) REFERENCES Tecnicos(id)
+      FOREIGN KEY (orden_id) REFERENCES sgc_ord_OrdenesTrabajo(id),
+      FOREIGN KEY (tecnico_id) REFERENCES sgc_ord_Tecnicos(id)
     )`).run();
 
     // Columnas faltantes en CostosAdicionales

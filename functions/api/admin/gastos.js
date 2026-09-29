@@ -6,7 +6,7 @@
 
 async function asegurarTabla(env) {
   try {
-    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS GastosNegocio (
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS sgc_ord_GastosNegocio (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       concepto TEXT NOT NULL,
       categoria TEXT NOT NULL DEFAULT 'Otros',
@@ -16,8 +16,8 @@ async function asegurarTabla(env) {
       registrado_por TEXT,
       fecha_registro DATETIME DEFAULT CURRENT_TIMESTAMP
     )`).run();
-    await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_gastos_categoria ON GastosNegocio(categoria)`).run();
-    await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_gastos_fecha ON GastosNegocio(fecha_gasto)`).run();
+    await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_gastos_categoria ON sgc_ord_GastosNegocio(categoria)`).run();
+    await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_gastos_fecha ON sgc_ord_GastosNegocio(fecha_gasto)`).run();
   } catch (e) {
     console.error('Error al asegurar tabla GastosNegocio:', e);
   }

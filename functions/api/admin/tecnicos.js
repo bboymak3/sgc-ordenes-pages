@@ -6,7 +6,7 @@
 
 async function asegurarColumnaComision(env) {
   try {
-    const columns = await env.DB.prepare("PRAGMA table_info(Tecnicos)").all();
+    const columns = await env.DB.prepare("PRAGMA table_info(sgc_ord_Tecnicos)").all();
     const hasComision = columns.results?.some(c => c.name === 'comision_porcentaje');
     if (!hasComision) {
       await env.DB.prepare("ALTER TABLE sgc_ord_Tecnicos ADD COLUMN comision_porcentaje REAL NOT NULL DEFAULT 40").run();
@@ -18,7 +18,7 @@ async function asegurarColumnaComision(env) {
 
 async function asegurarColumnaApellido(env) {
   try {
-    const columns = await env.DB.prepare("PRAGMA table_info(Tecnicos)").all();
+    const columns = await env.DB.prepare("PRAGMA table_info(sgc_ord_Tecnicos)").all();
     const hasApellido = columns.results?.some(c => c.name === 'apellido');
     if (!hasApellido) {
       await env.DB.prepare("ALTER TABLE sgc_ord_Tecnicos ADD COLUMN apellido TEXT DEFAULT ''").run();
@@ -101,7 +101,7 @@ export async function onRequestPost(context) {
     }
 
     // Verificar columna de acceso
-    const tableInfo = await env.DB.prepare("PRAGMA table_info(Tecnicos)").all();
+    const tableInfo = await env.DB.prepare("PRAGMA table_info(sgc_ord_Tecnicos)").all();
     const columnNames = (tableInfo.results || []).map(col => col.name);
     const accessColumn = columnNames.includes('codigo_acceso') ? 'codigo_acceso' : columnNames.includes('pin') ? 'pin' : null;
 

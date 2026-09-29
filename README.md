@@ -276,3 +276,31 @@ URL de producción: **<https://sgc-ordenes-di7.pages.dev>**
 ## 📄 Licencia
 
 Propietario — SGC. Todos los derechos reservados.
+
+---
+
+## Seguridad y pruebas (2026-09-29)
+
+- **Autenticación en todas las rutas `/api/*`** (`functions/api/_middleware.js`):
+  - Públicas: `POST /api/admin/login`, `POST /api/tecnico/login`, `GET /api/tracking?token=`, `GET /api/ver-orden?token=`,
+    `POST /api/aprobar-orden`, `POST /api/cancelar-orden` (por token UUID de la orden), `POST /api/public/crear-orden-express`, `GET /api/imagen`.
+  - Técnico: `/api/tecnico/*` con sesión de técnico; solo puede operar sus propias órdenes.
+  - Admin: todo lo demás. El panel envía `Authorization: Bearer <token>` automáticamente.
+- Sesiones en `sgc_ord_SesionesAdmin` con token aleatorio (`crypto.randomUUID`) y expiración UTC; logout con `DELETE /api/admin/login`.
+- Contraseñas con PBKDF2 + salt; los hashes SHA-256 antiguos se migran solos al iniciar sesión. Ya no se recrea `admin/admin123`.
+  **Cambia la contraseña por defecto** desde el menú "Cambiar contraseña" (el panel lo pide al entrar con `admin123`).
+- `/api/admin/migrar` desactivado (podía reconstruir `sgc_ord_OrdenesTrabajo` en una tabla sin prefijo). El esquema se gestiona con
+  las migraciones de `sgc-saas/worker/migrations`.
+- Citas del bot: el panel usa el proxy `/api/admin/citas-ia/*` hacia `sgc-saas` (secret `SGC_SAAS_ADMIN_TOKEN`), en lugar del
+  worker viejo `sgc-citas.correo36000.workers.dev`.
+
+### Pruebas
+
+```bash
+npm test                      # middleware, logins, sesiones, proxy y carga de los 60 módulos de functions/
+# E2E (requiere: npm i -D playwright wrangler)
+npx wrangler d1 execute citas --local --file=../sgc-saas/worker/schema/schema.sql
+for f in ../sgc-saas/worker/migrations/*.sql; do npx wrangler d1 execute citas --local --file=$f; done
+npx wrangler pages dev . --port 8788 &
+BASE_URL=http://127.0.0.1:8788 node --test test/e2e/ordenes.e2e.js
+```

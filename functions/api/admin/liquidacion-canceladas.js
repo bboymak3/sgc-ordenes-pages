@@ -6,7 +6,7 @@
 // ============================================
 
 async function asegurarTabla(env) {
-  await env.DB.prepare(`CREATE TABLE IF NOT EXISTS LiquidacionCanceladas (
+  await env.DB.prepare(`CREATE TABLE IF NOT EXISTS sgc_ord_LiquidacionCanceladas (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     orden_id INTEGER NOT NULL,
     tecnico_id INTEGER NOT NULL,
@@ -14,17 +14,17 @@ async function asegurarTabla(env) {
     fecha_cancelacion TEXT DEFAULT (datetime('now', '-3 hours')),
     motivo TEXT DEFAULT '',
     UNIQUE(orden_id, tecnico_id),
-    FOREIGN KEY (orden_id) REFERENCES OrdenesTrabajo(id),
-    FOREIGN KEY (tecnico_id) REFERENCES Tecnicos(id)
+    FOREIGN KEY (orden_id) REFERENCES sgc_ord_OrdenesTrabajo(id),
+    FOREIGN KEY (tecnico_id) REFERENCES sgc_ord_Tecnicos(id)
   )`).run();
   try {
-    await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_liq_cancel_orden ON LiquidacionCanceladas(orden_id)').run();
+    await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_liq_cancel_orden ON sgc_ord_LiquidacionCanceladas(orden_id)').run();
   } catch (e) {}
   try {
-    await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_liq_cancel_tecnico ON LiquidacionCanceladas(tecnico_id)').run();
+    await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_liq_cancel_tecnico ON sgc_ord_LiquidacionCanceladas(tecnico_id)').run();
   } catch (e) {}
   try {
-    await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_liq_cancel_unico ON LiquidacionCanceladas(orden_id, tecnico_id)').run();
+    await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_liq_cancel_unico ON sgc_ord_LiquidacionCanceladas(orden_id, tecnico_id)').run();
   } catch (e) {}
 }
 

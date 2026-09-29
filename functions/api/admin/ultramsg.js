@@ -12,11 +12,11 @@ import { chileNow } from '../../lib/db-helpers.js';
 async function asegurarConfigKV(env) {
   try {
     // Verificar si existe la columna 'clave' en Configuracion
-    var cols = await env.DB.prepare("PRAGMA table_info(Configuracion)").all();
+    var cols = await env.DB.prepare("PRAGMA table_info(sgc_ord_Configuracion)").all();
     var hasClave = cols.results.some(function(c) { return c.name === 'clave'; });
     if (!hasClave) {
       // Crear tabla simple KV si no existe
-      await env.DB.prepare(`CREATE TABLE IF NOT EXISTS ConfigKV (
+      await env.DB.prepare(`CREATE TABLE IF NOT EXISTS sgc_ord_ConfigKV (
         clave TEXT PRIMARY KEY,
         valor TEXT,
         fecha_actualizacion DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -24,7 +24,7 @@ async function asegurarConfigKV(env) {
     }
   } catch (e) {
     // Si falla, crear tabla KV
-    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS ConfigKV (
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS sgc_ord_ConfigKV (
       clave TEXT PRIMARY KEY,
       valor TEXT,
       fecha_actualizacion DATETIME DEFAULT CURRENT_TIMESTAMP

@@ -1,7 +1,7 @@
 const ALLOWED_ORIGINS = [
   'https://mecanico247.com',
   'https://www.mecanico247.com',
-  'https://sgc-ordenes.pages.dev',
+  'https://sgc-ordenes-di7.pages.dev',
   'https://sgc-ordenes.pages.dev',
 ];
 

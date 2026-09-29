@@ -13,3 +13,9 @@ bucket_name = "my-emdash-media"
 
 [vars]
 ENVIRONMENT = "production"
+SGC_SAAS_URL = "https://sgc-saas.activo.workers.dev"
+
+# Secrets (NO van en este archivo):
+#   wrangler pages secret put SGC_SAAS_ADMIN_TOKEN --project-name sgc-ordenes
+#     (mismo valor que ADMIN_TOKEN del worker sgc-saas; lo usa el proxy
+#      functions/api/admin/citas-ia para las citas del bot)

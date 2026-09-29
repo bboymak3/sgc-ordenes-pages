@@ -11,14 +11,14 @@ import { chileNow } from '../../lib/db-helpers.js';
 // Asegurar que ConfigKV existe (igual que ultramsg.js)
 async function asegurarConfigKV(env) {
   try {
-    await env.DB.prepare("PRAGMA table_info(Configuracion)").all();
-    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS ConfigKV (
+    await env.DB.prepare("PRAGMA table_info(sgc_ord_Configuracion)").all();
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS sgc_ord_ConfigKV (
       clave TEXT PRIMARY KEY,
       valor TEXT,
       fecha_actualizacion DATETIME DEFAULT CURRENT_TIMESTAMP
     )`).run();
   } catch (e) {
-    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS ConfigKV (
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS sgc_ord_ConfigKV (
       clave TEXT PRIMARY KEY,
       valor TEXT,
       fecha_actualizacion DATETIME DEFAULT CURRENT_TIMESTAMP

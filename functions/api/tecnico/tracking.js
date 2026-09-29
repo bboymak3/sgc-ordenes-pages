@@ -21,7 +21,7 @@ export async function onRequestPost(context) {
     }
 
     // Asegurar que la tabla TrackingTecnico existe
-    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS TrackingTecnico (
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS sgc_ord_TrackingTecnico (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       orden_id INTEGER NOT NULL,
       tecnico_id INTEGER NOT NULL,
@@ -29,14 +29,14 @@ export async function onRequestPost(context) {
       longitud REAL NOT NULL,
       velocidad REAL DEFAULT 0,
       fecha_registro TEXT DEFAULT (datetime('now', '-3 hours')),
-      FOREIGN KEY (orden_id) REFERENCES OrdenesTrabajo(id),
-      FOREIGN KEY (tecnico_id) REFERENCES Tecnicos(id)
+      FOREIGN KEY (orden_id) REFERENCES sgc_ord_OrdenesTrabajo(id),
+      FOREIGN KEY (tecnico_id) REFERENCES sgc_ord_Tecnicos(id)
     )`).run();
 
     // Crear índices si no existen
     try {
-      await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_tracking_orden ON TrackingTecnico(orden_id)').run();
-      await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_tracking_fecha ON TrackingTecnico(fecha_registro)').run();
+      await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_tracking_orden ON sgc_ord_TrackingTecnico(orden_id)').run();
+      await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_tracking_fecha ON sgc_ord_TrackingTecnico(fecha_registro)').run();
     } catch(e) {}
 
     // Limpiar puntos anteriores de esta orden (mantener solo los últimos 100 para no llenar la BD)

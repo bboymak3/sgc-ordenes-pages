@@ -223,7 +223,7 @@ export async function onRequestPost(context) {
           numero_orden: nuevoNumero,
           patente_placa: data.patente,
           cliente_nombre: data.cliente,
-          link_aprobacion: 'https://sgc-ordenes.pages.dev/aprobar?token=' + token
+          link_aprobacion: new URL(request.url).origin + '/aprobar?token=' + token
         });
       }
     } catch (ne) { console.log('Notificacion no enviada:', ne.message); }

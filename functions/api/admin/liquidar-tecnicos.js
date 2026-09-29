@@ -377,7 +377,7 @@ export async function onRequestGet(context) {
     // =============================================
     let canceladasSet = new Set();
     try {
-      await env.DB.prepare(`CREATE TABLE IF NOT EXISTS LiquidacionCanceladas (
+      await env.DB.prepare(`CREATE TABLE IF NOT EXISTS sgc_ord_LiquidacionCanceladas (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         orden_id INTEGER NOT NULL,
         tecnico_id INTEGER NOT NULL,
@@ -385,8 +385,8 @@ export async function onRequestGet(context) {
         fecha_cancelacion TEXT DEFAULT (datetime('now', '-3 hours')),
         motivo TEXT DEFAULT '',
         UNIQUE(orden_id, tecnico_id),
-        FOREIGN KEY (orden_id) REFERENCES OrdenesTrabajo(id),
-        FOREIGN KEY (tecnico_id) REFERENCES Tecnicos(id)
+        FOREIGN KEY (orden_id) REFERENCES sgc_ord_OrdenesTrabajo(id),
+        FOREIGN KEY (tecnico_id) REFERENCES sgc_ord_Tecnicos(id)
       )`).run();
 
       const { results: canceladasResults } = await env.DB.prepare(`
@@ -433,7 +433,7 @@ export async function onRequestGet(context) {
     let totalAdelantosPendientes = 0;
     try {
       // Asegurar tabla de adelantos
-      await env.DB.prepare(`CREATE TABLE IF NOT EXISTS AdelantosTecnico (
+      await env.DB.prepare(`CREATE TABLE IF NOT EXISTS sgc_ord_AdelantosTecnico (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         tecnico_id INTEGER NOT NULL,
         monto REAL NOT NULL,
@@ -444,7 +444,7 @@ export async function onRequestGet(context) {
         liquidacion_id INTEGER,
         fecha_registro TEXT DEFAULT (datetime('now', '-3 hours')),
         notas TEXT DEFAULT '',
-        FOREIGN KEY (tecnico_id) REFERENCES Tecnicos(id)
+        FOREIGN KEY (tecnico_id) REFERENCES sgc_ord_Tecnicos(id)
       )`).run();
       try { await env.DB.prepare('ALTER TABLE sgc_ord_AdelantosTecnico ADD COLUMN notas TEXT DEFAULT ""').run(); } catch(e) {}
 

@@ -8,7 +8,7 @@
 import { asegurarColumnasFaltantes } from '../../lib/db-helpers.js';
 
 async function asegurarTabla(env) {
-  await env.DB.prepare(`CREATE TABLE IF NOT EXISTS AdelantosTecnico (
+  await env.DB.prepare(`CREATE TABLE IF NOT EXISTS sgc_ord_AdelantosTecnico (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     tecnico_id INTEGER NOT NULL,
     monto REAL NOT NULL,
@@ -19,16 +19,16 @@ async function asegurarTabla(env) {
     liquidacion_id INTEGER,
     fecha_registro TEXT DEFAULT (datetime('now', '-3 hours')),
     notas TEXT DEFAULT '',
-    FOREIGN KEY (tecnico_id) REFERENCES Tecnicos(id)
+    FOREIGN KEY (tecnico_id) REFERENCES sgc_ord_Tecnicos(id)
   )`).run();
   try {
     await env.DB.prepare('ALTER TABLE sgc_ord_AdelantosTecnico ADD COLUMN notas TEXT DEFAULT ""').run();
   } catch (e) {}
   try {
-    await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_adelantos_tecnico ON AdelantosTecnico(tecnico_id)').run();
+    await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_adelantos_tecnico ON sgc_ord_AdelantosTecnico(tecnico_id)').run();
   } catch (e) {}
   try {
-    await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_adelantos_estado ON AdelantosTecnico(estado)').run();
+    await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_adelantos_estado ON sgc_ord_AdelantosTecnico(estado)').run();
   } catch (e) {}
 }
 

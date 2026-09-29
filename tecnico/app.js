@@ -16,13 +16,38 @@ let trackingViajeActivo = false;   // Si el tracking de viaje está activo
 let trackingInterval = null;       // Intervalo para enviar GPS cada 30s
 let trackingOrdenId = null;        // ID de la orden en tracking activo
 
+// Las llamadas a /api/tecnico/* (salvo login) llevan el token de sesión del técnico.
+// Sesiones guardadas antes de este cambio no tienen token: se pide login de nuevo.
+(function () {
+    const origFetch = window.fetch.bind(window);
+    window.fetch = async function (input, init) {
+        const url = typeof input === 'string' ? input : input.url;
+        if (!url.startsWith('/api/tecnico/') || url.startsWith('/api/tecnico/login')) return origFetch(input, init);
+        init = Object.assign({}, init || {});
+        const headers = new Headers(init.headers || {});
+        if (tecnicoActual && tecnicoActual.token) headers.set('Authorization', 'Bearer ' + tecnicoActual.token);
+        init.headers = headers;
+        const res = await origFetch(input, init);
+        if (res.status === 401 && tecnicoActual) {
+            logout();
+            mostrarErrorLogin('Tu sesión expiró. Ingresa nuevamente.');
+        }
+        return res;
+    };
+})();
+
 // Inicialización
 document.addEventListener('DOMContentLoaded', function() {
     // Verificar si hay sesión activa
     const sesionGuardada = localStorage.getItem('tecnico_sesion');
     if (sesionGuardada) {
         tecnicoActual = JSON.parse(sesionGuardada);
-        mostrarApp();
+        if (tecnicoActual && tecnicoActual.token) {
+            mostrarApp();
+        } else {
+            localStorage.removeItem('tecnico_sesion');
+            tecnicoActual = null;
+        }
     }
 
     // Configurar input de foto
@@ -1834,7 +1859,7 @@ async function compartirTracking() {
         return;
     }
 
-    var trackingUrl = 'https://sgc-ordenes.pages.dev/tracking?token=' + token;
+    var trackingUrl = location.origin + '/tracking?token=' + token;
     var estadoTracking = trackingViajeActivo
         ? '<div class="alert alert-success mt-3 mb-0 py-2"><i class="fas fa-broadcast-tower me-2"></i>Tracking ACTIVO - El cliente puede verte en el mapa</div>'
         : '<div class="alert alert-warning mt-3 mb-0 py-2"><i class="fas fa-exclamation-triangle me-2"></i>Debes iniciar el viaje para que el cliente te vea en el mapa</div>';

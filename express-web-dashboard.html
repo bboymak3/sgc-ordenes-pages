@@ -315,6 +315,21 @@
 
     <script>
         const API_URL = '/api/public/listar-ordenes-express';
+        // Requiere la sesión del panel admin (mismo navegador)
+        (function () {
+            const token = localStorage.getItem('gp_admin_token');
+            if (!token) { location.href = '/index.html'; return; }
+            const origFetch = window.fetch.bind(window);
+            window.fetch = async function (input, init) {
+                init = Object.assign({}, init || {});
+                const headers = new Headers(init.headers || {});
+                headers.set('Authorization', 'Bearer ' + token);
+                init.headers = headers;
+                const res = await origFetch(input, init);
+                if (res.status === 401) { localStorage.removeItem('gp_admin_token'); location.href = '/index.html'; }
+                return res;
+            };
+        })();
 
         function badgeClass(estado) {
             if (!estado) return 'badge-default';

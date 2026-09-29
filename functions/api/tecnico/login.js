@@ -1,96 +1,39 @@
 // ============================================
 // API: LOGIN DE TÉCNICOS
-// SGC
-// Detecta automáticamente si la columna es 'pin' o 'codigo_acceso'
+// POST { telefono, pin } → { tecnico, token }
+// El token (sesión "tecnico:<id>") se envía como Authorization: Bearer en
+// las demás llamadas de /api/tecnico/* (ver _middleware.js).
 // ============================================
 
-async function obtenerColumnaAcceso(env) {
-  try {
-    const tableInfo = await env.DB.prepare("PRAGMA table_info(Tecnicos)").all();
-    const columnas = (tableInfo.results || []).map(col => col.name);
+import { createSession, jsonResponse, loginThrottled, markLoginFailure } from '../../lib/auth.js';
 
-    if (columnas.includes('pin')) return 'pin';
-    if (columnas.includes('codigo_acceso')) return 'codigo_acceso';
-    return null;
-  } catch (e) {
-    console.log('Error obteniendo columna de acceso:', e.message);
-    return null;
-  }
-}
+// Días de validez de la sesión del técnico (PWA en el celular)
+const TECNICO_SESSION_HOURS = 24 * 14;
 
 export async function onRequestPost(context) {
   const { request, env } = context;
-
   try {
-    const data = await request.json();
+    const data = await request.json().catch(() => ({}));
+    const telefono = String(data.telefono || '').trim();
+    const pin = String(data.pin || '').trim();
+    if (!telefono || !pin) return jsonResponse({ success: false, error: 'Faltan datos: teléfono y PIN' }, 400);
 
-    if (!data.telefono || !data.pin) {
-      return new Response(JSON.stringify({
-        success: false,
-        error: 'Faltan datos: teléfono y PIN'
-      }), {
-        headers: { 'Content-Type': 'application/json' },
-        status: 400
-      });
+    if (await loginThrottled(request, 'tecnico:' + telefono)) {
+      return jsonResponse({ success: false, error: 'Demasiados intentos, espera unos segundos' }, 429);
     }
 
-    // Detectar columna de acceso (pin o codigo_acceso)
-    const accessColumn = await obtenerColumnaAcceso(env);
-
-    if (!accessColumn) {
-      // Intentar crear la columna pin si no existe ninguna
-      try {
-        await env.DB.prepare("ALTER TABLE sgc_ord_Tecnicos ADD COLUMN pin TEXT").run();
-        const check = await env.DB.prepare("PRAGMA table_info(Tecnicos)").all();
-        const cols = (check.results || []).map(c => c.name);
-        if (cols.includes('pin')) {
-          return await doLogin(env, 'pin', data.telefono, data.pin);
-        }
-      } catch (e) {
-        // Columna ya existe o error
-      }
-      return new Response(JSON.stringify({
-        success: false,
-        error: 'Error de configuración: tabla Tecnicos no tiene columna de acceso'
-      }), {
-        headers: { 'Content-Type': 'application/json' },
-        status: 500
-      });
+    const tecnico = await env.DB.prepare(
+      'SELECT id, nombre, telefono, email FROM sgc_ord_Tecnicos WHERE telefono = ? AND pin = ? AND activo = 1'
+    ).bind(telefono, pin).first();
+    if (!tecnico) {
+      await markLoginFailure(request, 'tecnico:' + telefono);
+      return jsonResponse({ success: false, error: 'Credenciales incorrectas o técnico inactivo' }, 401);
     }
 
-    return await doLogin(env, accessColumn, data.telefono, data.pin);
-
+    const { token, expira } = await createSession(env, `tecnico:${tecnico.id}`, TECNICO_SESSION_HOURS);
+    return jsonResponse({ success: true, tecnico: { ...tecnico, token, expira } });
   } catch (error) {
     console.error('Error en login de técnico:', error);
-    return new Response(JSON.stringify({
-      success: false,
-      error: error.message
-    }), {
-      headers: { 'Content-Type': 'application/json' },
-      status: 500
-    });
+    return jsonResponse({ success: false, error: 'Error interno' }, 500);
   }
-}
-
-async function doLogin(env, accessColumn, telefono, pin) {
-  const tecnico = await env.DB.prepare(
-    `SELECT id, nombre, telefono, email FROM sgc_ord_Tecnicos WHERE telefono = ? AND ${accessColumn} = ? AND activo = 1`
-  ).bind(telefono, pin).first();
-
-  if (!tecnico) {
-    return new Response(JSON.stringify({
-      success: false,
-      error: 'Credenciales incorrectas o técnico inactivo'
-    }), {
-      headers: { 'Content-Type': 'application/json' },
-      status: 401
-    });
-  }
-
-  return new Response(JSON.stringify({
-    success: true,
-    tecnico: tecnico
-  }), {
-    headers: { 'Content-Type': 'application/json' }
-  });
 }

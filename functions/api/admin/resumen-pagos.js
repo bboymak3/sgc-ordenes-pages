@@ -36,7 +36,7 @@ function filtrarServiciosPorTecnico(srvs, tecnicoId, tecnicoAsignadoId) {
 
 async function asegurarTablas(env) {
   try {
-    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS CostosAdicionales (
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS sgc_ord_CostosAdicionales (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       orden_id INTEGER NOT NULL,
       concepto TEXT NOT NULL,
@@ -45,7 +45,7 @@ async function asegurarTablas(env) {
       registrado_por TEXT,
       categoria TEXT NOT NULL DEFAULT 'Mano de Obra'
     )`).run();
-    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS GastosNegocio (
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS sgc_ord_GastosNegocio (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       concepto TEXT NOT NULL,
       categoria TEXT NOT NULL DEFAULT 'Otros',
@@ -55,11 +55,11 @@ async function asegurarTablas(env) {
       registrado_por TEXT,
       fecha_registro DATETIME DEFAULT CURRENT_TIMESTAMP
     )`).run();
-    await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_gastos_fecha ON GastosNegocio(fecha_gasto)`).run();
+    await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_gastos_fecha ON sgc_ord_GastosNegocio(fecha_gasto)`).run();
 
     // Asegurar columna categoria
     try {
-      const columns = await env.DB.prepare("PRAGMA table_info(CostosAdicionales)").all();
+      const columns = await env.DB.prepare("PRAGMA table_info(sgc_ord_CostosAdicionales)").all();
       const hasCategoria = columns.results?.some(c => c.name === 'categoria');
       if (!hasCategoria) {
         await env.DB.prepare("ALTER TABLE sgc_ord_CostosAdicionales ADD COLUMN categoria TEXT NOT NULL DEFAULT 'Mano de Obra'").run();
@@ -544,7 +544,7 @@ export async function onRequestGet(context) {
         let ordParams = [tecnicoId];
         // Excluir órdenes canceladas en liquidación
         try {
-          await env.DB.prepare(`CREATE TABLE IF NOT EXISTS LiquidacionCanceladas (
+          await env.DB.prepare(`CREATE TABLE IF NOT EXISTS sgc_ord_LiquidacionCanceladas (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             orden_id INTEGER NOT NULL,
             tecnico_id INTEGER NOT NULL,
@@ -895,7 +895,7 @@ export async function onRequestGet(context) {
     let adelantosPorTecnico = [];
     let adelantosDetalle = [];
     try {
-      await env.DB.prepare(`CREATE TABLE IF NOT EXISTS AdelantosTecnico (
+      await env.DB.prepare(`CREATE TABLE IF NOT EXISTS sgc_ord_AdelantosTecnico (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         tecnico_id INTEGER NOT NULL,
         monto REAL NOT NULL,
@@ -906,7 +906,7 @@ export async function onRequestGet(context) {
         liquidacion_id INTEGER,
         notas TEXT DEFAULT '',
         fecha_registro TEXT DEFAULT (datetime('now', '-3 hours')),
-        FOREIGN KEY (tecnico_id) REFERENCES Tecnicos(id)
+        FOREIGN KEY (tecnico_id) REFERENCES sgc_ord_Tecnicos(id)
       )`).run();
 
       // ADELANTOS: NO se filtran por fecha — son permanentes hasta que se paguen

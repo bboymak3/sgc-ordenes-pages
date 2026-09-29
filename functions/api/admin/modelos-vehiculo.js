@@ -6,7 +6,7 @@
 
 async function asegurarTabla(env) {
   try {
-    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS ModelosVehiculo (
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS sgc_ord_ModelosVehiculo (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       nombre TEXT NOT NULL UNIQUE,
       fecha_registro DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -18,7 +18,7 @@ async function asegurarTabla(env) {
 
 async function asegurarColumnas(env) {
   try {
-    const cols = await env.DB.prepare("PRAGMA table_info(OrdenesTrabajo)").all();
+    const cols = await env.DB.prepare("PRAGMA table_info(sgc_ord_OrdenesTrabajo)").all();
     const names = (cols.results || []).map(c => c.name);
     if (!names.includes('diagnostico_checks')) {
       await env.DB.prepare("ALTER TABLE sgc_ord_OrdenesTrabajo ADD COLUMN diagnostico_checks TEXT").run();

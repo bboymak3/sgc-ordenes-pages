@@ -9,7 +9,7 @@ const TIPOS_COMISION = ['mano_obra', 'repuestos'];
 
 async function asegurarTabla(env) {
   try {
-    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS ServiciosCatalogo (
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS sgc_ord_ServiciosCatalogo (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       nombre TEXT NOT NULL UNIQUE,
       precio_sugerido REAL NOT NULL DEFAULT 0,
@@ -18,8 +18,8 @@ async function asegurarTabla(env) {
       activo INTEGER DEFAULT 1,
       fecha_registro DATETIME DEFAULT CURRENT_TIMESTAMP
     )`).run();
-    await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_servicios_cat_categoria ON ServiciosCatalogo(categoria)`).run();
-    await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_servicios_cat_activo ON ServiciosCatalogo(activo)`).run();
+    await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_servicios_cat_categoria ON sgc_ord_ServiciosCatalogo(categoria)`).run();
+    await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_servicios_cat_activo ON sgc_ord_ServiciosCatalogo(activo)`).run();
   } catch (e) {
     console.error('Error al asegurar tabla ServiciosCatalogo:', e);
   }

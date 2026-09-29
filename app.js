@@ -23,6 +23,37 @@ let ordenActual = null;
 let ordenesFiltradas = [];
 let adminToken = null;
 
+// Todas las llamadas a /api/* (salvo el login) llevan la sesión del admin.
+// Si el servidor responde 401 la sesión expiró: se vuelve a la pantalla de login.
+(function () {
+    const origFetch = window.fetch.bind(window);
+    window.fetch = async function (input, init) {
+        const url = typeof input === 'string' ? input : input.url;
+        const isApi = url.startsWith('/api/') || url.startsWith(location.origin + '/api/');
+        if (!isApi || url.includes('/api/admin/login')) return origFetch(input, init);
+        init = Object.assign({}, init || {});
+        const headers = new Headers(init.headers || {});
+        const token = adminToken || localStorage.getItem('gp_admin_token');
+        if (token) headers.set('Authorization', 'Bearer ' + token);
+        init.headers = headers;
+        const res = await origFetch(input, init);
+        if (res.status === 401 && token) sesionExpirada();
+        return res;
+    };
+})();
+
+function sesionExpirada() {
+    localStorage.removeItem('gp_admin_token');
+    adminToken = null;
+    datosInicialesCargados = false;
+    const overlay = document.getElementById('login-overlay');
+    const mainApp = document.getElementById('main-app');
+    if (overlay) overlay.style.display = '';
+    if (mainApp) mainApp.style.display = 'none';
+    const errDiv = document.getElementById('login-error');
+    if (errDiv) { errDiv.style.display = 'block'; errDiv.textContent = 'Tu sesión expiró. Ingresa nuevamente.'; }
+}
+
 // ============================================
 // LOGIN ADMIN
 // ============================================
@@ -31,6 +62,10 @@ let adminToken = null;
     if (token) {
         adminToken = token;
         mostrarApp();
+        // Validar que la sesión siga vigente en el servidor
+        fetch(API_BASE + '/admin/login?token=' + encodeURIComponent(token)).then(function (r) {
+            if (r.status === 401) sesionExpirada();
+        }).catch(function () {});
     }
 })();
 
@@ -51,6 +86,7 @@ function doLogin() {
             adminToken = data.token;
             localStorage.setItem('gp_admin_token', data.token);
             mostrarApp();
+            if (data.debe_cambiar_password) setTimeout(cambiarPasswordAdmin, 300);
         } else {
             errDiv.style.display = 'block'; errDiv.textContent = data.error || 'Error al iniciar sesion';
             btn.disabled = false; btn.innerHTML = '<i class="fas fa-sign-in-alt me-2"></i>Ingresar';
@@ -66,6 +102,7 @@ function mostrarApp() {
     var mainApp = document.getElementById('main-app');
     if (overlay) overlay.style.display = 'none';
     if (mainApp) mainApp.style.display = 'block';
+    setTimeout(cargarDatosIniciales, 0);
 
     // Si hay hash en URL, navegar a esa sección (usado desde calendario.html links)
     var hash = window.location.hash.replace('#', '');
@@ -88,9 +125,26 @@ function mostrarApp() {
 }
 
 function doLogout() {
+    const token = adminToken || localStorage.getItem('gp_admin_token');
     localStorage.removeItem('gp_admin_token');
     adminToken = null;
-    location.reload();
+    fetch(API_BASE + '/admin/login', { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + token } })
+        .finally(function () { location.reload(); });
+}
+
+async function cambiarPasswordAdmin() {
+    const actual = prompt('Por seguridad cambia la contraseña por defecto.\n\nContraseña actual:');
+    if (!actual) return;
+    const nueva = prompt('Nueva contraseña (mínimo 10 caracteres):');
+    if (!nueva) return;
+    if (prompt('Repite la nueva contraseña:') !== nueva) { alert('Las contraseñas no coinciden'); return; }
+    const res = await fetch(API_BASE + '/admin/cambiar-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ actual: actual, nueva: nueva })
+    });
+    const data = await res.json().catch(function () { return {}; });
+    alert(data.success ? 'Contraseña actualizada ✅' : ('No se pudo cambiar: ' + (data.error || 'error')));
 }
 
 // ============================================
@@ -146,12 +200,16 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('fecha-ingreso').value = getChileDate();
     document.getElementById('hora-ingreso').value = ahora.toTimeString().slice(0, 5);
     
-    // Cargar próximo número de orden
-    cargarProximoNumeroOrden();
-    
-    // Cargar técnicos para el selector de diagnóstico
-    cargarTecnicosParaDiagnostico();
+    // El número de orden y los técnicos requieren sesión: se cargan en mostrarApp()
 });
+
+var datosInicialesCargados = false;
+function cargarDatosIniciales() {
+    if (datosInicialesCargados) return;
+    datosInicialesCargados = true;
+    cargarProximoNumeroOrden();
+    cargarTecnicosParaDiagnostico();
+}
 
 // ============================================
 // NAVEGACIÓN
@@ -5144,7 +5202,7 @@ function verInformeCliente(idx) {
 // sistema de recordatorios (sgc-recordatorios worker)
 // ============================================
 
-const RECORDATORIO_API = 'https://sgc-recordatorios.correo36000.workers.dev';
+const RECORDATORIO_API = 'https://sgc-recordatorios.activo.workers.dev';
 
 async function registrarRecordatoriosCliente(nombreCliente, telefono, patentesEncoded) {
     const patentes = JSON.parse(decodeURIComponent(patentesEncoded));
@@ -5232,14 +5290,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Auto-migración: crear tablas si no existen
-    fetch('/api/admin/migrar').then(r => r.json()).then(data => {
-        if (data.success) {
-            // Migración aplicada exitosamente
-        }
-    }).catch(err => {
-        // Migración ya aplicada o no disponible
-    });
 });
 
 // ============================================
@@ -7999,7 +8049,7 @@ async function cargarEventosCalendario(startStr, endStr) {
 
         // 3. Citas agendadas via Chat IA (Worker sgc-citas)
         try {
-            const citasResp = await fetch('https://sgc-citas.correo36000.workers.dev/api/citas/rango?inicio=' + startStr.split('T')[0] + '&fin=' + endStr.split('T')[0]);
+            const citasResp = await fetch('/api/admin/citas-ia/rango?inicio=' + startStr.split('T')[0] + '&fin=' + endStr.split('T')[0]);
             const citasData = await citasResp.json();
             if (citasData.success && citasData.citas) {
                 citasData.citas.forEach(c => {
@@ -8457,7 +8507,8 @@ async function eliminarEventoPorDrag(event) {
 // ═══════════════════════════════════════════════════════════════
 // ÓRDENES DEL BOT IA — Aprobar / Rechazar
 // ═══════════════════════════════════════════════════════════════
-const CITAS_API = 'https://sgc-citas.correo36000.workers.dev/api/citas-admin';
+// Citas del bot (sgc-saas) vía proxy autenticado: functions/api/admin/citas-ia
+const CITAS_API = '/api/admin/citas-ia';
 let ordenesBotAutoRefresh = null;
 let _ultimoPendientesCount = -1;
 let _ultimoPendientesIds = [];
@@ -8487,8 +8538,8 @@ function enviarPushNuevaCita(cita) {
 
     var notif = new Notification('🤖 Nueva Cita del Bot IA', {
         body: cliente + ' — ' + servicio + '\n' + tipo + ' | ' + fecha,
-        icon: 'https://sgc-citas.correo36000.workers.dev/favicon.ico',
-        badge: 'https://sgc-citas.correo36000.workers.dev/favicon.ico',
+        icon: '/public/icon-192.png',
+        badge: '/public/icon-192.png',
         tag: 'cita-bot-' + cita.id,
         requireInteraction: true,
         vibrate: [200, 100, 200, 100, 200]

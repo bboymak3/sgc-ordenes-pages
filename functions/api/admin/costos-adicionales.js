@@ -56,7 +56,7 @@ async function recalcularMontoOrden(env, ordenId) {
 async function asegurarColumnaCategoria(env) {
   try {
     // Verificar si la columna categoria existe
-    const columns = await env.DB.prepare("PRAGMA table_info(CostosAdicionales)").all();
+    const columns = await env.DB.prepare("PRAGMA table_info(sgc_ord_CostosAdicionales)").all();
     const hasCategoria = columns.results?.some(c => c.name === 'categoria');
     if (!hasCategoria) {
       await env.DB.prepare("ALTER TABLE sgc_ord_CostosAdicionales ADD COLUMN categoria TEXT NOT NULL DEFAULT 'Mano de Obra'").run();

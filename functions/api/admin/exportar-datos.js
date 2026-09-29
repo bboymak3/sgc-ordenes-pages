@@ -16,7 +16,7 @@ import { chileNowISO, buildFechaWhere } from '../../lib/db-helpers.js';
 async function asegurarTablas(env) {
   try {
     // ===== CREAR TABLAS SI NO EXISTEN =====
-    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS CostosAdicionales (
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS sgc_ord_CostosAdicionales (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       orden_id INTEGER NOT NULL,
       concepto TEXT NOT NULL,
@@ -26,10 +26,10 @@ async function asegurarTablas(env) {
       categoria TEXT NOT NULL DEFAULT 'Mano de Obra'
     )`).run();
 
-    await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_costos_orden ON CostosAdicionales(orden_id)`).run();
-    await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_costos_categoria ON CostosAdicionales(categoria)`).run();
+    await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_costos_orden ON sgc_ord_CostosAdicionales(orden_id)`).run();
+    await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_costos_categoria ON sgc_ord_CostosAdicionales(categoria)`).run();
 
-    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS GastosNegocio (
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS sgc_ord_GastosNegocio (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       concepto TEXT NOT NULL,
       categoria TEXT NOT NULL DEFAULT 'Otros',
@@ -40,10 +40,10 @@ async function asegurarTablas(env) {
       fecha_registro DATETIME DEFAULT CURRENT_TIMESTAMP
     )`).run();
 
-    await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_gastos_categoria ON GastosNegocio(categoria)`).run();
-    await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_gastos_fecha ON GastosNegocio(fecha_gasto)`).run();
+    await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_gastos_categoria ON sgc_ord_GastosNegocio(categoria)`).run();
+    await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_gastos_fecha ON sgc_ord_GastosNegocio(fecha_gasto)`).run();
 
-    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS Pagos (
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS sgc_ord_Pagos (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       orden_id INTEGER NOT NULL,
       monto REAL NOT NULL,
@@ -52,9 +52,9 @@ async function asegurarTablas(env) {
       observaciones TEXT
     )`).run();
 
-    await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_pagos_orden ON Pagos(orden_id)`).run();
+    await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_pagos_orden ON sgc_ord_Pagos(orden_id)`).run();
 
-    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS ServiciosCatalogo (
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS sgc_ord_ServiciosCatalogo (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       nombre TEXT NOT NULL UNIQUE,
       precio_sugerido REAL NOT NULL DEFAULT 0,
@@ -64,7 +64,7 @@ async function asegurarTablas(env) {
       fecha_registro DATETIME DEFAULT CURRENT_TIMESTAMP
     )`).run();
 
-    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS ModelosVehiculo (
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS sgc_ord_ModelosVehiculo (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       nombre TEXT NOT NULL UNIQUE,
       fecha_registro DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -103,20 +103,20 @@ async function asegurarTablas(env) {
 
     // ===== TABLA LiquidacionCanceladas (para excluir órdenes canceladas en liquidación) =====
     try {
-      await env.DB.prepare(`CREATE TABLE IF NOT EXISTS LiquidacionCanceladas (
+      await env.DB.prepare(`CREATE TABLE IF NOT EXISTS sgc_ord_LiquidacionCanceladas (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         orden_id INTEGER NOT NULL,
         tecnico_id INTEGER NOT NULL,
         fecha_cancelacion TEXT DEFAULT (datetime('now', '-3 hours')),
         UNIQUE(orden_id, tecnico_id)
       )`).run();
-      await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_liq_canceladas_orden ON LiquidacionCanceladas(orden_id)`).run();
-      await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_liq_canceladas_tecnico ON LiquidacionCanceladas(tecnico_id)`).run();
+      await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_liq_canceladas_orden ON sgc_ord_LiquidacionCanceladas(orden_id)`).run();
+      await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_liq_canceladas_tecnico ON sgc_ord_LiquidacionCanceladas(tecnico_id)`).run();
     } catch (e) { /* ya existe */ }
 
     // ===== TABLA AdelantosTecnico (con notas) =====
     try {
-      await env.DB.prepare(`CREATE TABLE IF NOT EXISTS AdelantosTecnico (
+      await env.DB.prepare(`CREATE TABLE IF NOT EXISTS sgc_ord_AdelantosTecnico (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         tecnico_id INTEGER NOT NULL,
         monto REAL NOT NULL,
@@ -127,7 +127,7 @@ async function asegurarTablas(env) {
         liquidacion_id INTEGER,
         notas TEXT DEFAULT '',
         fecha_registro TEXT DEFAULT (datetime('now', '-3 hours')),
-        FOREIGN KEY (tecnico_id) REFERENCES Tecnicos(id)
+        FOREIGN KEY (tecnico_id) REFERENCES sgc_ord_Tecnicos(id)
       )`).run();
     } catch (e) { /* ya existe */ }
     try {
@@ -622,7 +622,7 @@ export async function onRequestGet(context) {
     let adelantosPorTecnico = [];
     let adelantosDetalle = [];
     try {
-      await env.DB.prepare(`CREATE TABLE IF NOT EXISTS AdelantosTecnico (
+      await env.DB.prepare(`CREATE TABLE IF NOT EXISTS sgc_ord_AdelantosTecnico (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         tecnico_id INTEGER NOT NULL,
         monto REAL NOT NULL,
@@ -632,7 +632,7 @@ export async function onRequestGet(context) {
         estado TEXT NOT NULL DEFAULT 'pendiente',
         liquidacion_id INTEGER,
         fecha_registro TEXT DEFAULT (datetime('now', '-3 hours')),
-        FOREIGN KEY (tecnico_id) REFERENCES Tecnicos(id)
+        FOREIGN KEY (tecnico_id) REFERENCES sgc_ord_Tecnicos(id)
       )`).run();
 
       let adelantoWhere = '';

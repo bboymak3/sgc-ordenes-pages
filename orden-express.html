@@ -534,7 +534,8 @@
         // desde cualquier dominio (mecanico247, etc.)
         // ============================================
 
-        const API_BASE = 'https://sgc-ordenes.pages.dev/api';
+        // En el propio proyecto Pages se usa ruta relativa; embebido en otro dominio, la URL del despliegue
+        const API_BASE = /\.pages\.dev$|^localhost$|^127\.0\.0\.1$/.test(location.hostname) ? '/api' : 'https://sgc-ordenes-di7.pages.dev/api';
 
         // ============================================
         // MAPA PICKER (Leaflet + Nominatim)

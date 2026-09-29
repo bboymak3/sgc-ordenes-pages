@@ -40,7 +40,7 @@ export async function onRequestGet(context) {
       }
       try { await env.DB.exec('ALTER TABLE sgc_ord_OrdenesTrabajo ADD COLUMN es_express INTEGER DEFAULT 0'); } catch (e) {}
       try { await env.DB.exec('ALTER TABLE sgc_ord_Vehiculos ADD COLUMN color TEXT DEFAULT NULL'); } catch (e) {}
-      try { await env.DB.exec('CREATE TABLE IF NOT EXISTS CostosAdicionales (id INTEGER PRIMARY KEY AUTOINCREMENT, orden_id INTEGER NOT NULL, concepto TEXT NOT NULL, monto REAL NOT NULL, fecha_registro DATETIME DEFAULT CURRENT_TIMESTAMP, registrado_por TEXT, categoria TEXT NOT NULL DEFAULT \'Mano de Obra\')'); } catch (e) {}
+      try { await env.DB.exec('CREATE TABLE IF NOT EXISTS sgc_ord_CostosAdicionales (id INTEGER PRIMARY KEY AUTOINCREMENT, orden_id INTEGER NOT NULL, concepto TEXT NOT NULL, monto REAL NOT NULL, fecha_registro DATETIME DEFAULT CURRENT_TIMESTAMP, registrado_por TEXT, categoria TEXT NOT NULL DEFAULT \'Mano de Obra\')'); } catch (e) {}
     } catch (e) {}
 
     if (token) {
@@ -134,7 +134,7 @@ export async function onRequestGet(context) {
     // Obtener servicios seleccionados
     let serviciosSeleccionados = [];
     try {
-      const cols = await env.DB.prepare("PRAGMA table_info(OrdenesTrabajo)").all();
+      const cols = await env.DB.prepare("PRAGMA table_info(sgc_ord_OrdenesTrabajo)").all();
       const hasServicios = (cols.results || []).some(c => c.name === 'servicios_seleccionados');
       if (hasServicios && orden.servicios_seleccionados) {
         serviciosSeleccionados = typeof orden.servicios_seleccionados === 'string' 
